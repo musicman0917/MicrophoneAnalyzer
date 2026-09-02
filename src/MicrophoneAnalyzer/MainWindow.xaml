@@ -1,0 +1,48 @@
+<Window x:Class="MicrophoneAnalyzer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:MicrophoneAnalyzer.UI"
+        Title="Mic Level HUD"
+        Width="150" Height="420"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown"
+        Loaded="Window_Loaded" Closing="Window_Closing">
+    <Border CornerRadius="14" Background="#DD121214" BorderBrush="#33FFFFFF" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="16" Opacity="0.5" ShadowDepth="2" Color="Black"/>
+        </Border.Effect>
+        <Border.ContextMenu>
+            <ContextMenu>
+                <MenuItem Header="Select Input Device..." Click="SelectDevice_Click"/>
+                <MenuItem Header="Toggle Orientation" Click="ToggleOrientation_Click"/>
+                <Separator/>
+                <MenuItem x:Name="TopmostMenuItem" Header="Always On Top" IsCheckable="True"
+                          IsChecked="True" Click="ToggleTopmost_Click"/>
+                <Separator/>
+                <MenuItem Header="Exit" Click="Exit_Click"/>
+            </ContextMenu>
+        </Border.ContextMenu>
+
+        <Grid Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="MIC LEVEL" Foreground="#88FFFFFF" FontSize="10"
+                       FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,6"/>
+
+            <ui:LedMeterControl x:Name="Meter" Grid.Row="1" Width="40"
+                                 HorizontalAlignment="Center" VerticalAlignment="Stretch"/>
+
+            <TextBlock x:Name="DbReadout" Grid.Row="2" Text="-∞ dB" Foreground="White"
+                       FontSize="15" FontFamily="Consolas" HorizontalAlignment="Center" Margin="0,8,0,2"/>
+
+            <TextBlock x:Name="ZoneLabel" Grid.Row="3" Text="NO SIGNAL" FontSize="12" FontWeight="Bold"
+                       Foreground="#888888" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+        </Grid>
+    </Border>
+</Window>
