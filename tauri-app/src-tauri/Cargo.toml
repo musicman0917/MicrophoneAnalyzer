@@ -18,7 +18,11 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon"] }
+# devtools (F12 inspector) isn't part of tauri's default feature set - Cargo has no
+# supported way to gate a dependency feature on debug_assertions (target.'cfg(...)'
+# dependencies only understand platform selectors like target_os/windows), so this stays
+# on in release builds too rather than silently not working.
+tauri = { version = "2", features = ["tray-icon", "devtools"] }
 tauri-plugin-opener = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-notification = "2"
