@@ -110,16 +110,19 @@ chain, since Discord never sees OBS at all).
 
 ### Hardware reference diagram
 
-**This ships as a stylized schematic, not a product photo** - `control.html`'s inline SVG
-is hand-drawn vector shapes (knobs, a touchscreen, a headphone jack) roughly laid out like
-the DLZ Creator XS's front panel, not a traced or photographed image. To get a
-pixel-accurate reference:
+`assets/dlz-front-panel.jpg` is an actual photo of a DLZ Creator XS, and the hotspot
+coordinates in `shared/hotspots.js` (fractions 0..1 of the image's width/height) were
+measured directly against it. Two labels are confirmed straight off that unit's own
+touchscreen in the photo - "CH1 Input +26dB" on the gain encoder, and "Gate"/"Compressor"
+sections in its FX menu - rather than guessed. One hotspot (the numbered 1-5 knob cluster)
+is deliberately hedged in its description: their exact function wasn't legible/confirmable
+from the photo alone, so it's labeled as an educated guess, not asserted as fact. Mackie's
+manual would settle it, but it's not fetchable from this environment (network egress to
+mackie.com is blocked here) - if you have it, update that entry.
 
-1. Take (or find) a photo of your actual unit and set it as the `.hardware-diagram`
-   background in `control.css` (or swap the `<svg>` block in `control.html` for an `<img>`).
-2. Adjust the `xPct`/`yPct` fractions in `shared/hotspots.js` to match where each control
-   actually sits in your photo - they're fractions of the container's width/height, so they
-   stay aligned regardless of window size.
+If you swap in a different photo (a different unit, angle, or crop), the coordinates won't
+transfer automatically - re-measure `xPct`/`yPct` in `shared/hotspots.js` against the new
+image, and swap the `<img src>` in `control.html`.
 
 Hotspots glow when a current recommendation references them (color follows severity: red
 for critical, amber for warning, blue for informational) and show a tooltip on hover
