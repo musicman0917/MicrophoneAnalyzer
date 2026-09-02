@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Capability for both app windows. Note: the app's own #[tauri::command] handlers (list_devices, start_capture, etc. in commands.rs) aren't gated by this file at all - Tauri's capability/ACL system only governs plugin commands and certain core APIs invoked directly from the frontend, not custom commands registered via invoke_handler. This still needs to list both window labels (not the default scaffold's \"main\", which neither of our windows is labeled) for the plugin permissions below to apply to them.",
+  "description": "Capability for both app windows. Note: the app's own #[tauri::command] handlers (list_devices, start_capture, etc. in commands.rs) aren't gated by this file at all - Tauri's capability/ACL system only governs plugin commands and certain core APIs invoked directly from the frontend, not custom commands registered via invoke_handler.",
   "windows": ["hud", "control"],
   "permissions": [
     "core:default",

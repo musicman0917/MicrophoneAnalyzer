@@ -23,7 +23,7 @@ at all, so this class of bug cannot happen here.
 This was developed and verified building/running on Linux (cpal's ALSA backend, WebKitGTK
 for the window chrome) since that's what was available - the architecture is identical on
 Windows, just swapping cpal's backend to WASAPI and the webview to WebView2, both handled
-transparently by cpal/Tauri. It has not yet been run against real Windows/WASAPI hardware.
+transparently by cpal/Tauri.
 
 ## Running it
 
@@ -68,6 +68,35 @@ src/             Frontend - almost entirely reused from ../electron-app/renderer
                  to call Tauri commands/events instead of window.hudApi/window.controlApi.
 ```
 
+### Both windows are declared visible, on purpose
+
+`hud` and `control` are both declared in `tauri.conf.json` with no `visible: false` and no
+hide-then-show choreography in Rust - both windows are simply on screen from the moment the
+app launches. This looks like it costs a small UX nicety (Control Center popping up on every
+launch instead of starting tucked away), but it's the result of hard-won debugging on real
+Windows hardware, not an oversight:
+
+Three earlier, more "polished" designs - runtime-building the Control Center window on
+demand, declaring it `visible: false` and showing it lazily, and eagerly creating it then
+hiding it from `.setup()` - each produced a window with correct native chrome but a WebView2
+control that was either never created or stuck on `about:blank`, confirmed via WebView2's
+own `--remote-debugging-port` CDP endpoint (`http://localhost:9222/json` showed no page
+target at all, or one parked on `about:blank`, depending on the attempt). Every one of those
+failure modes traced back to some part of window/webview creation happening off Tauri's main
+thread, or racing WebView2's own asynchronous controller-creation/navigation sequence.
+
+Rather than layer on a fourth timing-dependent workaround, this version removes the
+choreography entirely: both windows are created by Tauri's own startup bootstrap, the same
+known-good path, at the same time. `open_control_center` just calls `show()`/`set_focus()`
+on a window that's been fully alive since launch. Closing either window hides it rather than
+destroying it (`on_window_event`'s `CloseRequested` handler), so that call is always
+operating on an already-initialized webview - no re-creation, ever, after the first launch.
+
+If someone wants the "starts hidden" nicety back, the least risky path is a short, visible
+splash state (rather than `visible: false`) so the controller is still created eagerly on
+the main thread - and worth re-verifying against `--remote-debugging-port` before trusting
+it, given how many ways this specific corner of Tauri/WebView2 has broken so far.
+
 ### What actually got simpler
 
 Moving the audio engine into Rust as global app state (`app.manage(AudioEngine::new())`)
@@ -102,12 +131,25 @@ one you're analyzing is a live atomic store, not a stream/graph rebuild.
 
 ## Verification
 
-Every module was compiled with `cargo check`/`cargo build` (catching real bugs along the
-way - see git history for two: a `SetChannel` command that couldn't actually reach the
-running stream, and a tray-icon error-type mismatch). The full app was then run headlessly
-under Xvfb (this project has no real audio hardware or Windows to test WASAPI capture
-against), with `xdotool` driving clicks and `ffmpeg -f x11grab` capturing screenshots to
-confirm the HUD, Control Center, and all four tabs (Devices, Noise Floor, Recommendations,
-Hardware Reference) actually render and respond to input, not just that the code compiles.
-Device enumeration and capture themselves are unverified against real WASAPI hardware - do
-that first before trusting the numbers.
+This version of `tauri-app/` was rebuilt from a clean `npm create tauri-app@latest`
+scaffold rather than incrementally patched, after real Windows/WebView2 hardware testing
+showed the Control Center window staying permanently blank through three separate targeted
+fixes (see git history from `61dc47e` through `d7893ff` for that whole investigation,
+including the CDP-based diagnosis that ruled each one out). Only `audio.rs` and `dsp.rs`
+(no window/webview code at all) were carried over unchanged; `Cargo.toml`, `tauri.conf.json`,
+`commands.rs`, and `lib.rs` were rebuilt on top of the fresh scaffold's own known-good
+defaults, specifically to remove every piece of hidden/lazy-window choreography that had
+been implicated - see "Both windows are declared visible, on purpose" above.
+
+Every module was compiled clean with `cargo check`/`cargo build`. The full app was then run
+headlessly under Xvfb (this sandbox has no real audio hardware or Windows to test WASAPI
+capture against) with `xdotool` driving clicks and `ffmpeg -f x11grab` capturing
+screenshots, confirming both HUD and Control Center render real content **simultaneously
+from the moment the app launches** (not just after some interaction), and that closing and
+reopening Control Center via the HUD's gear icon still shows full content afterward.
+
+Device enumeration and capture, and this rebuilt Control Center window, are both still
+unverified against real Windows/WASAPI hardware - do that first before trusting the numbers,
+and specifically re-check `http://localhost:9222/json` (see "Both windows are declared
+visible, on purpose" above for how) one more time to confirm `control/control.html` now
+actually appears as a live page target instead of `about:blank` or nothing at all.

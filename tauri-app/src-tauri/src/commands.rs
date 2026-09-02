@@ -161,37 +161,19 @@ pub async fn run_calibration(app: AppHandle, engine: State<'_, AudioEngine>) -> 
     run_calibration_and_notify(&app, &engine).await
 }
 
+/// "control" is declared visible in tauri.conf.json, same as "hud" - both windows get their
+/// WebView2 controller created eagerly at startup, on the main thread, by Tauri's own
+/// bootstrap. No lazy/hidden-then-shown choreography: earlier attempts at that (visible:
+/// false, or an eager-create-then-hide dance in .setup()) reliably left this window with
+/// native chrome but no working webview inside, confirmed on real Windows hardware via
+/// WebView2's own remote-debugging endpoint. This command just shows/focuses a window that
+/// was already fully alive since launch.
 #[tauri::command]
 pub fn open_control_center(app: AppHandle) -> Result<(), String> {
-    // "control" is declared visible in tauri.conf.json and its WebView2 controller gets
-    // created eagerly in .setup() (see lib.rs) on the main thread, then hidden once
-    // control.js confirms it loaded (see control_ready below) - so by the time this command
-    // runs, showing/focusing it is just a state change on an already-initialized webview.
-    // Still routed through run_on_main_thread as defense in depth: window/webview operations
-    // reaching Win32 APIs off the main thread are the recurring root cause behind this
-    // window going blank in earlier attempts.
-    let app_for_main_thread = app.clone();
-    app.run_on_main_thread(move || {
-        if let Some(window) = app_for_main_thread.get_webview_window("control") {
-            let _ = window.show();
-            let _ = window.set_focus();
-        }
-    })
-    .map_err(|e| e.to_string())
-}
-
-/// Called once by control.js as its first action after loading - see that file's top for
-/// why this has to be a signal from the page itself rather than something Rust does
-/// unconditionally right after creating the window.
-#[tauri::command]
-pub fn control_ready(app: AppHandle) -> Result<(), String> {
-    let app_for_main_thread = app.clone();
-    app.run_on_main_thread(move || {
-        if let Some(window) = app_for_main_thread.get_webview_window("control") {
-            let _ = window.hide();
-        }
-    })
-    .map_err(|e| e.to_string())
+    let window = app.get_webview_window("control").ok_or("control window not found")?;
+    window.show().map_err(|e| e.to_string())?;
+    window.set_focus().map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]

@@ -37,7 +37,6 @@ pub fn run() {
             commands::get_status,
             commands::run_calibration,
             commands::open_control_center,
-            commands::control_ready,
             commands::set_hud_always_on_top,
             commands::resize_hud,
             commands::quit_app,
@@ -50,24 +49,6 @@ pub fn run() {
                 eprintln!("[hotkey] failed to register Ctrl+Alt+N: {err}");
             }
 
-            // "control" is declared visible in tauri.conf.json (not visible: false) so WRY
-            // creates its WebView2 controller eagerly, right here in .setup() - which Tauri
-            // guarantees runs on the main thread, same as "hud"'s own creation. A window
-            // declared visible: false was observed (on real Windows/WebView2 hardware) to
-            // defer that controller creation to its first show() call instead, which then
-            // happened from inside a command handler's worker thread and silently produced
-            // a window with native chrome but no working webview inside - confirmed via
-            // WebView2's own remote-debugging endpoint (--remote-debugging-port) showing no
-            // page target for control.html at all, i.e. no controller was ever created.
-            //
-            // It's deliberately NOT hidden here: WebView2 controller creation and its initial
-            // navigation are asynchronous, and .setup() runs before Tauri's event loop starts
-            // pumping the messages that async completion needs - hiding synchronously here
-            // raced that pending navigation and left the window stuck on about:blank
-            // (confirmed the same way, via the remote-debugging endpoint). Instead
-            // commands::control_ready hides it once control.js confirms the page actually
-            // loaded and started running - see that file's first line.
-
             setup_tray(app)?;
             spawn_level_emitter(handle);
 
@@ -78,6 +59,13 @@ pub fn run() {
             // or tearing down its webview - this is a background utility, not a document
             // window, and hiding (vs. destroying) "control" lets open_control_center just
             // show()/set_focus() an already-initialized webview instead of re-creating one.
+            // Both "hud" and "control" are declared visible in tauri.conf.json and get their
+            // WebView2 controllers created at startup by Tauri's own bootstrap - no lazy or
+            // hidden-then-shown window choreography here at all, deliberately: attempts at
+            // that (visible: false, or hiding a window from .setup() before its async
+            // WebView2 initialization/navigation had actually completed) reliably produced a
+            // window with native chrome but no working webview inside on real Windows
+            // hardware, confirmed via WebView2's own remote-debugging endpoint.
             if window.label() == "hud" || window.label() == "control" {
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
