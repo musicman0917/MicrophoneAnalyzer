@@ -3,14 +3,13 @@
 // fractions (0..1) of that image's width/height, so hotspots stay aligned regardless of
 // how large the diagram is rendered.
 //
-// Positions and the confirmed labels below were read directly off that unit's touchscreen
-// in the photo (e.g. "CH1 Input +26dB", "Gate", "Compressor" are literally on screen) -
-// not guessed. The one exception is the numbered 1-5 knob cluster: their exact function
-// wasn't legible/confirmable from the photo, so that entry is deliberately hedged rather
-// than asserted. If you have the manual or know for certain, update CHANNEL_KNOBS below.
+// Every label/description below is sourced, not guessed: either read directly off that
+// unit's own touchscreen in the photo (e.g. "CH1 Input +26dB", "Gate", "Compressor" are
+// literally on screen), or confirmed against the official DLZ Creator XS Owner's Manual,
+// Chapter 3 ("DLZ Creator XS Top Panel Features").
 //
-// If you swap in a different photo (different angle/crop), re-measure these fractions
-// against the new image - they won't transfer automatically.
+// If you swap in a different photo (different unit, angle, or crop), re-measure these
+// fractions against the new image - they won't transfer automatically.
 
 export const HOTSPOT_IDS = Object.freeze({
   GAIN_TRIM: 'gainTrim',
@@ -25,13 +24,14 @@ export const HOTSPOTS = [
     id: HOTSPOT_IDS.GAIN_TRIM,
     xPct: 0.27,
     yPct: 0.098,
-    label: 'Channel Encoder 1 - Input Gain',
+    label: 'Quick Control Knob 1 - Input Gain',
     description:
-      'Confirmed from the touchscreen readout ("CH1 Input +26dB"): this is the leftmost of ' +
-      'the 4 encoders above the screen. It\'s multi-function - the same knob also controls ' +
-      'Pan / Reverb Send / Delay Send depending on which column is selected on screen - but ' +
-      'Input gain is what it controls by default. Raise it if your level is under-powered, ' +
-      'pull it back if you\'re clipping.',
+      'The manual calls these 4 knobs "Quick Control Knobs": "context-dependent parameters ' +
+      'as viewed on the display to the left of them... not assignable or user-customizable, ' +
+      'but pre-assigned parameters may be accessed then edited." This leftmost one is on ' +
+      'Input gain by default here (screen reads "CH1 Input +26dB") - the same knob also ' +
+      'reaches Pan / Reverb Send / Delay Send depending on which column is selected. Raise ' +
+      'it if your level is under-powered, pull it back if you\'re clipping.',
   },
   {
     id: HOTSPOT_IDS.TOUCHSCREEN_GATE,
@@ -56,11 +56,13 @@ export const HOTSPOTS = [
     id: HOTSPOT_IDS.CHANNEL_KNOBS,
     xPct: 0.566,
     yPct: 0.48,
-    label: 'Numbered Knobs 1-5',
+    label: 'Channel Knobs 1-5',
     description:
-      'Visible on the unit but not confirmed from the photo alone - each has its own LED and ' +
-      'a small mute/link button. Likely per-channel volume/mix controls, but treat that as an ' +
-      'educated guess, not a confirmed fact, until checked against the manual.',
+      'Per the manual: "The channel knobs adjust the level of each channel going to the ' +
+      'selected output(s)" - a mix/output fader, not input gain. Each has a paired Solo ' +
+      'button (illuminates amber) and Mute button (illuminates red) above it, matching the ' +
+      'amber/red buttons visible here. Not part of gain staging - leave these alone when ' +
+      'chasing a level problem; that\'s the Quick Control Knob\'s job.',
   },
   {
     id: HOTSPOT_IDS.MIC_POSITION,

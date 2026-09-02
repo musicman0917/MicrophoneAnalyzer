@@ -112,13 +112,12 @@ chain, since Discord never sees OBS at all).
 
 `assets/dlz-front-panel.jpg` is an actual photo of a DLZ Creator XS, and the hotspot
 coordinates in `shared/hotspots.js` (fractions 0..1 of the image's width/height) were
-measured directly against it. Two labels are confirmed straight off that unit's own
-touchscreen in the photo - "CH1 Input +26dB" on the gain encoder, and "Gate"/"Compressor"
-sections in its FX menu - rather than guessed. One hotspot (the numbered 1-5 knob cluster)
-is deliberately hedged in its description: their exact function wasn't legible/confirmable
-from the photo alone, so it's labeled as an educated guess, not asserted as fact. Mackie's
-manual would settle it, but it's not fetchable from this environment (network egress to
-mackie.com is blocked here) - if you have it, update that entry.
+measured directly against it. Every label is sourced, not guessed: some straight off that
+unit's own touchscreen in the photo ("CH1 Input +26dB" on the Quick Control Knob,
+"Gate"/"Compressor" in its FX menu), the rest confirmed against the official DLZ Creator XS
+Owner's Manual (Chapter 3, "Top Panel Features") - e.g. the numbered 1-5 knob cluster is a
+per-channel *output* level control with paired Solo/Mute buttons, quoting the manual
+verbatim, not the gain-staging control it might look like at a glance.
 
 If you swap in a different photo (a different unit, angle, or crop), the coordinates won't
 transfer automatically - re-measure `xPct`/`yPct` in `shared/hotspots.js` against the new
