@@ -112,20 +112,41 @@ chain, since Discord never sees OBS at all).
 
 `assets/dlz-front-panel.jpg` is an actual photo of a DLZ Creator XS, and the hotspot
 coordinates in `shared/hotspots.js` (fractions 0..1 of the image's width/height) were
-measured directly against it. Every label is sourced, not guessed: some straight off that
-unit's own touchscreen in the photo ("CH1 Input +26dB" on the Quick Control Knob,
-"Gate"/"Compressor" in its FX menu), the rest confirmed against the official DLZ Creator XS
-Owner's Manual (Chapter 3, "Top Panel Features") - e.g. the numbered 1-5 knob cluster is a
+measured directly against it. All 10 hotspots are clickable, not just the glowing ones -
+click any point for its full detail: description, a numbered tap sequence where it lives on
+the touchscreen, and (for 4 of them) an actual screenshot of that menu extracted from the
+official DLZ Creator XS Owner's Manual PDF (`assets/manual/*.png`, pulled via `pdfimages`,
+not a mockup or a redraw).
+
+Every label/description/step is sourced, not guessed: some straight off the unit's own
+touchscreen in the photo ("CH1 Input +26dB" on the Quick Control Knob), the rest quoted or
+paraphrased from the manual (Chapters 3 and 6) - e.g. the numbered 1-5 knob cluster is a
 per-channel *output* level control with paired Solo/Mute buttons, quoting the manual
-verbatim, not the gain-staging control it might look like at a glance.
+verbatim, not the gain-staging control it might look like at a glance; the Gate and
+Compressor entries carry the manual's actual default values (Gate: Threshold -45 dB, Range
+-19 dB, Attack 19 ms, Release 92 ms, Hold 50 ms; Compressor: Threshold -30 dB, Ratio 2:1,
+Gain +1 dB, Attack 42 ms, Release 500 ms, Soft Knee).
+
+One caveat stated plainly in `shared/hotspots.js`'s header comment: the manual's screenshots
+show what that menu *contains* and how to *reach* it - they aren't a guarantee that your
+unit's current on-screen layout matches pixel-for-pixel (firmware can move on from what a
+manual was written against). Four hotspots that all live on the touchscreen (48V, Set Gain
+Automatically, Gate, Compressor) are spread across the screen's bounding box in this UI
+purely so each is independently clickable - that spread is a UI convenience, not a claim
+about their exact on-screen pixel position; the linked screenshot is the accurate reference
+for the real layout.
+
+The manual PDF itself isn't checked into this repo (it's Mackie's copyrighted document);
+only the handful of extracted menu screenshots are, used here as user-guidance reference
+material the same way any compatible third-party app might cite a product's own screens.
 
 If you swap in a different photo (a different unit, angle, or crop), the coordinates won't
 transfer automatically - re-measure `xPct`/`yPct` in `shared/hotspots.js` against the new
 image, and swap the `<img src>` in `control.html`.
 
 Hotspots glow when a current recommendation references them (color follows severity: red
-for critical, amber for warning, blue for informational) and show a tooltip on hover
-regardless of state.
+for critical, amber for warning, blue for informational); hovering shows a quick label,
+clicking opens the full detail panel below the diagram.
 
 ## Web Audio vs. WASAPI - a real limitation
 

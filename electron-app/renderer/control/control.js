@@ -32,6 +32,7 @@ const dom = {
 
   hotspotLayer: document.getElementById('hotspotLayer'),
   hotspotTooltip: document.getElementById('hotspotTooltip'),
+  hotspotDetail: document.getElementById('hotspotDetail'),
 };
 
 const state = {
@@ -343,6 +344,7 @@ function initHardwareTab() {
     el.addEventListener('mouseenter', (e) => showTooltip(hotspot, e));
     el.addEventListener('mousemove', (e) => positionTooltip(e));
     el.addEventListener('mouseleave', hideTooltip);
+    el.addEventListener('click', () => selectHotspot(hotspot));
 
     dom.hotspotLayer.appendChild(el);
     hotspotElements.set(hotspot.id, el);
@@ -351,7 +353,7 @@ function initHardwareTab() {
 
 function showTooltip(hotspot, event) {
   dom.hotspotTooltip.hidden = false;
-  dom.hotspotTooltip.innerHTML = `<strong>${hotspot.label}</strong>${hotspot.description}`;
+  dom.hotspotTooltip.innerHTML = `<strong>${hotspot.label}</strong>Click for the full tap sequence.`;
   positionTooltip(event);
 }
 
@@ -363,6 +365,52 @@ function positionTooltip(event) {
 
 function hideTooltip() {
   dom.hotspotTooltip.hidden = true;
+}
+
+function selectHotspot(hotspot) {
+  for (const el of hotspotElements.values()) el.classList.remove('selected');
+  hotspotElements.get(hotspot.id)?.classList.add('selected');
+
+  dom.hotspotDetail.innerHTML = '';
+
+  const label = document.createElement('h3');
+  label.className = 'hotspot-detail-label';
+  label.textContent = hotspot.label;
+  dom.hotspotDetail.appendChild(label);
+
+  const description = document.createElement('p');
+  description.className = 'hotspot-detail-description';
+  description.textContent = hotspot.description;
+  dom.hotspotDetail.appendChild(description);
+
+  if (hotspot.steps?.length) {
+    const stepsList = document.createElement('ol');
+    stepsList.className = 'hotspot-detail-steps';
+    for (const step of hotspot.steps) {
+      const li = document.createElement('li');
+      li.textContent = step;
+      stepsList.appendChild(li);
+    }
+    dom.hotspotDetail.appendChild(stepsList);
+  }
+
+  if (hotspot.screenshot) {
+    const wrap = document.createElement('div');
+    wrap.className = 'hotspot-detail-screenshot-wrap';
+
+    const caption = document.createElement('p');
+    caption.className = 'hotspot-detail-screenshot-caption';
+    caption.textContent = "From the official DLZ Creator XS Owner's Manual:";
+    wrap.appendChild(caption);
+
+    const img = document.createElement('img');
+    img.className = 'hotspot-detail-screenshot';
+    img.src = hotspot.screenshot;
+    img.alt = `${hotspot.label} - manual screenshot`;
+    wrap.appendChild(img);
+
+    dom.hotspotDetail.appendChild(wrap);
+  }
 }
 
 const SEVERITY_GLOW_COLOR = {

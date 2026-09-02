@@ -317,8 +317,15 @@ h2 {
   padding: 20px 0;
 }
 
-.hardware-diagram-wrap {
+.hardware-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   max-width: 720px;
+}
+
+.hardware-diagram-wrap {
+  width: 100%;
 }
 
 .hardware-diagram {
@@ -364,6 +371,12 @@ h2 {
   animation: pulse 1.6s ease-in-out infinite;
 }
 
+.hotspot.selected {
+  border-color: #fff;
+  border-width: 2px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
 @keyframes pulse {
   0%, 100% {
     box-shadow: 0 0 0 0 var(--glow-color, rgba(48, 209, 88, 0.55));
@@ -371,6 +384,58 @@ h2 {
   50% {
     box-shadow: 0 0 0 8px rgba(48, 209, 88, 0);
   }
+}
+
+.hotspot-detail {
+  padding: 18px 20px;
+  background: #1e1e22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  min-height: 80px;
+}
+
+.hotspot-detail-placeholder {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+  margin: 0;
+}
+
+.hotspot-detail-label {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.hotspot-detail-description {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.55;
+  margin: 0 0 12px;
+}
+
+.hotspot-detail-steps {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.7;
+}
+
+.hotspot-detail-screenshot-wrap {
+  margin-top: 8px;
+}
+
+.hotspot-detail-screenshot-caption {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0 0 6px;
+}
+
+.hotspot-detail-screenshot {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: block;
 }
 
 .hotspot-tooltip {

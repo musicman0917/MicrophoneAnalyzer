@@ -30,12 +30,12 @@ export function buildRecommendations({ rmsDb, peakDb, noiseFloor = null, workflo
       detail:
         `RMS is sitting at ${rmsDb.toFixed(1)} dB, below the -18 dB sweet-spot floor. Raise the ` +
         'channel gain trim on the DLZ Creator XS in small steps while talking at your normal ' +
-        'level, until the meter settles in the green band.',
+        'level, until the meter settles in the green band - or just use "Set Gain Automatically."',
       obs: [
         "Raise the hardware gain trim before reaching for OBS's Gain filter - analog gain (the " +
           "DLZ's Dynamite preamp) adds far less noise than digital makeup gain.",
       ],
-      hotspots: [HOTSPOT_IDS.GAIN_TRIM],
+      hotspots: [HOTSPOT_IDS.GAIN_TRIM, HOTSPOT_IDS.SET_GAIN_AUTO],
     });
   }
 

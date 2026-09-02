@@ -111,17 +111,25 @@
     <section id="tab-hardware" class="tab-panel">
       <h2>Interactive Hardware Reference</h2>
       <p class="hint">
-        Glowing points show what to touch on the DLZ Creator XS based on your current
-        recommendations. Hover any point for detail.
+        Glowing points show what to touch based on your current recommendations. Every point
+        is clickable - not just the glowing ones - for the exact tap sequence and, where the
+        control lives on the touchscreen, an actual screenshot pulled from the official DLZ
+        Creator XS Owner's Manual.
         <em>Coordinates in <code>shared/hotspots.js</code> were measured against this exact
         photo - swap in a different photo (different unit, angle, or crop) and you'll need to
         re-measure them.</em>
       </p>
 
-      <div class="hardware-diagram-wrap">
-        <div id="hardwareDiagram" class="hardware-diagram">
-          <img src="../../assets/dlz-front-panel.jpg" alt="Mackie DLZ Creator XS front panel" class="diagram-photo" />
-          <div id="hotspotLayer" class="hotspot-layer"></div>
+      <div class="hardware-layout">
+        <div class="hardware-diagram-wrap">
+          <div id="hardwareDiagram" class="hardware-diagram">
+            <img src="../../assets/dlz-front-panel.jpg" alt="Mackie DLZ Creator XS front panel" class="diagram-photo" />
+            <div id="hotspotLayer" class="hotspot-layer"></div>
+          </div>
+        </div>
+
+        <div id="hotspotDetail" class="hotspot-detail">
+          <p class="hotspot-detail-placeholder">Click any point on the diagram for details.</p>
         </div>
       </div>
 
