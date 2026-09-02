@@ -1,9 +1,19 @@
 # MicrophoneAnalyzer
 
-A lightweight, always-on-top Windows HUD that watches a channel on a USB audio interface
-(built and tested conceptually against a **Mackie DLZ Creator XS** feeding an **sE
-DynaCaster**) and shows a broadcast-style LED meter with a "sweet spot" color guide, so
-you can glance at it before hitting record, going live, or hopping into a Discord call.
+Two implementations of the same idea: a real-time mic-level analyzer and "sweet spot"
+visual guide for a multi-environment workflow (local recording, live streaming, Discord
+voice/karaoke), built around a **Mackie DLZ Creator XS** feeding an **sE DynaCaster**.
+
+- **`src/`** - a WPF/.NET 8 app using NAudio/WASAPI. Full per-channel access to the DLZ's
+  multi-channel interface, Windows-only. See below for details.
+- **`electron-app/`** - an Electron/Web Audio API app with the same LED HUD plus three
+  extra modules: room noise floor calibration, an OBS filter/workflow recommendation
+  engine, and an interactive hardware reference diagram. Cross-platform-capable, but the
+  Web Audio API can't do WASAPI-style per-channel addressing (see that app's README for
+  what that means in practice). See `electron-app/README.md` for its own architecture,
+  setup, and details.
+
+The rest of this file covers the WPF/NAudio version.
 
 ## Requirements
 

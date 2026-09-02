@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
+  <title>Mic Level HUD - Control Center</title>
+  <link rel="stylesheet" href="control.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Mic Level HUD <span class="brand-sub">Control Center</span></div>
+
+    <div class="status-strip">
+      <span id="statusDot" class="status-dot"></span>
+      <span id="statusText">Not connected</span>
+      <span class="sep">|</span>
+      <span id="liveDb" class="live-db">-- dB</span>
+      <span id="liveZone" class="live-zone">NO SIGNAL</span>
+    </div>
+
+    <label class="workflow-picker">
+      Workflow
+      <select id="workflowSelect">
+        <option value="streaming">Live Streaming</option>
+        <option value="recording">Local Recording</option>
+        <option value="discord">Discord / Karaoke</option>
+      </select>
+    </label>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="devices">Devices &amp; Meter</button>
+    <button class="tab-btn" data-tab="noise">Noise Floor Calibration</button>
+    <button class="tab-btn" data-tab="recommendations">Recommendations</button>
+    <button class="tab-btn" data-tab="hardware">Hardware Reference</button>
+  </nav>
+
+  <main class="tab-content">
+    <section id="tab-devices" class="tab-panel active">
+      <h2>Input Device</h2>
+      <p class="hint">
+        The Mackie DLZ Creator XS exposes itself as one Windows/macOS audio device with several
+        channels. Pick the device, then the channel your sE DynaCaster is routed to.
+      </p>
+
+      <div class="field-row">
+        <label for="deviceSelect">Device</label>
+        <select id="deviceSelect"></select>
+        <button id="refreshDevicesBtn">Refresh</button>
+      </div>
+
+      <div class="field-row">
+        <label for="channelSelect">Channel</label>
+        <select id="channelSelect"></select>
+        <button id="connectBtn" class="primary">Connect</button>
+      </div>
+
+      <p id="deviceError" class="error-text" hidden></p>
+
+      <div class="callout">
+        <strong>A real limitation, not a bug:</strong> the Web Audio API only lets a browser
+        request "as many channels as the driver will grant" via <code>channelCount</code> - it
+        can't do WASAPI-style exclusive per-channel addressing. If your OS/driver only ever hands
+        Chromium a stereo pair, per-channel selection above channel 2 won't be available here even
+        though the interface has more inputs. The NAudio/WASAPI version of this app doesn't have
+        that ceiling.
+      </div>
+    </section>
+
+    <section id="tab-noise" class="tab-panel">
+      <h2>Room Noise Floor &amp; Silence Calibration</h2>
+      <p class="hint">
+        Stay silent for a couple of seconds while this samples your room's ambient noise (fans,
+        HVAC, PC hum, room echo). The result suggests a noise-gate threshold 6-10 dB above that
+        floor - enough headroom to avoid gate chatter without letting noise through.
+      </p>
+
+      <button id="calibrateBtn" class="primary">Run Noise Floor Check (Ctrl+Alt+N)</button>
+      <div id="calibrationProgress" class="progress-bar" hidden>
+        <div id="calibrationProgressFill" class="progress-bar-fill"></div>
+      </div>
+
+      <div id="calibrationResult" class="calibration-result" hidden>
+        <div class="result-grid">
+          <div>
+            <span class="result-label">Noise Floor</span>
+            <span id="resultNoiseFloor" class="result-value">--</span>
+          </div>
+          <div>
+            <span class="result-label">Suggested Gate Threshold</span>
+            <span id="resultGateThreshold" class="result-value">--</span>
+          </div>
+          <div>
+            <span class="result-label">Suggested Gate Range</span>
+            <span id="resultGateRange" class="result-value">--</span>
+          </div>
+        </div>
+        <p id="resultAlert" class="result-alert" hidden></p>
+      </div>
+    </section>
+
+    <section id="tab-recommendations" class="tab-panel">
+      <h2>OBS Filter &amp; Chain Recommendations</h2>
+      <p class="hint">
+        Rules react to your live level, the calibrated noise floor (if you've run one), and the
+        workflow selected above. This is a starting point, not gospel - trust your ears.
+      </p>
+      <div id="recommendationsList" class="recommendations-list"></div>
+    </section>
+
+    <section id="tab-hardware" class="tab-panel">
+      <h2>Interactive Hardware Reference</h2>
+      <p class="hint">
+        Glowing points show what to touch on the DLZ Creator XS based on your current
+        recommendations. Hover any point for detail.
+        <em>This is a stylized schematic, not a product photo - swap in your own device photo and
+        adjust the coordinates in <code>shared/hotspots.js</code> for a pixel-accurate reference.</em>
+      </p>
+
+      <div class="hardware-diagram-wrap">
+        <div id="hardwareDiagram" class="hardware-diagram">
+          <svg viewBox="0 0 160 100" preserveAspectRatio="none" class="diagram-svg">
+            <rect x="14" y="15" width="132" height="70" rx="8" class="diagram-body" />
+            <circle cx="30" cy="26" r="6" class="diagram-knob" />
+            <circle cx="63" cy="26" r="6" class="diagram-knob" />
+            <circle cx="96" cy="26" r="6" class="diagram-knob" />
+            <circle cx="129" cy="26" r="6" class="diagram-knob" />
+            <rect x="62" y="41" width="36" height="28" rx="3" class="diagram-screen" />
+            <circle cx="30" cy="80" r="6" class="diagram-knob diagram-knob-master" />
+            <circle cx="137.6" cy="80" r="7" class="diagram-knob" />
+            <rect x="74" y="83" width="12" height="4" rx="1" class="diagram-port" />
+            <text x="80" y="94" class="diagram-caption">USB-C</text>
+          </svg>
+          <div id="hotspotLayer" class="hotspot-layer"></div>
+        </div>
+      </div>
+
+      <div id="hotspotTooltip" class="hotspot-tooltip" hidden></div>
+    </section>
+  </main>
+
+  <script type="module" src="control.js"></script>
+</body>
+</html>

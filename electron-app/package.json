@@ -1,0 +1,13 @@
+{
+  "name": "mic-level-hud-electron",
+  "version": "0.1.0",
+  "description": "Real-time mic-level analyzer and sweet-spot HUD for the Mackie DLZ Creator XS, with noise floor calibration, OBS recommendations, and an interactive hardware reference.",
+  "main": "main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check main/main.js && node --check preload/hud-preload.js && node --check preload/control-preload.js"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0"
+  }
+}
