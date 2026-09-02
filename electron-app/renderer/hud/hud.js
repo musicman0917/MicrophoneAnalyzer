@@ -7,6 +7,19 @@ const SEGMENT_COUNT = 28;
 const MAX_DB = 0;
 const GAP_RATIO = 0.22;
 
+// The bar's own visual floor - deliberately NOT the same as MIN_DB (-60, used for real dB
+// math/silence detection elsewhere). At -60, the "Too Low" zone (< -24dB) alone spans 36 of
+// 60 dB - 60% of the whole bar - and since segments light cumulatively from the bottom, any
+// ordinary speaking level lights up that entire oversized red base before ever reaching the
+// comparatively tiny green band. The bar ends up looking like a wall of red almost all the
+// time, regardless of whether anything is actually wrong. -30 gives "Too Low" the same 6dB
+// visual width as the "Low" band above it (symmetric, and verified against actual segment
+// output - at a comfortable -14dB RMS this drops the lit bar from 81% red to 40%, with the
+// green sweet-spot band actually visible instead of a sliver). This only changes what the
+// BAR shows - the classification thresholds themselves (TOO_LOW_CEILING etc. in
+// levelClassifier.js) are unchanged, so "how loud is too loud" advice doesn't shift at all.
+const METER_FLOOR_DB = -30;
+
 const panel = document.getElementById('panel');
 const canvas = document.getElementById('meterCanvas');
 const ctx = canvas.getContext('2d');
@@ -237,7 +250,7 @@ function drawMeter(rmsDb, peakHoldDb) {
   const peakSegment = Math.min(SEGMENT_COUNT - 1, Math.max(0, dbToSegmentIndex(peakHoldDb) - 1));
 
   for (let i = 0; i < SEGMENT_COUNT; i++) {
-    const segDbLow = MIN_DB + ((MAX_DB - MIN_DB) * i) / SEGMENT_COUNT;
+    const segDbLow = METER_FLOOR_DB + ((MAX_DB - METER_FLOOR_DB) * i) / SEGMENT_COUNT;
     const zone = classify(segDbLow);
     const baseColor = colorFor(zone);
     const lit = i < litCount;
@@ -270,6 +283,6 @@ function drawMeter(rmsDb, peakHoldDb) {
 }
 
 function dbToSegmentIndex(db) {
-  const normalized = (db - MIN_DB) / (MAX_DB - MIN_DB);
+  const normalized = (db - METER_FLOOR_DB) / (MAX_DB - METER_FLOOR_DB);
   return Math.min(SEGMENT_COUNT, Math.max(0, Math.round(normalized * SEGMENT_COUNT)));
 }
