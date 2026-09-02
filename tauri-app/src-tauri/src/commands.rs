@@ -163,20 +163,32 @@ pub async fn run_calibration(app: AppHandle, engine: State<'_, AudioEngine>) -> 
 
 #[tauri::command]
 pub fn open_control_center(app: AppHandle) -> Result<(), String> {
-    if let Some(window) = app.get_webview_window("control") {
-        window.show().map_err(|e| e.to_string())?;
-        window.set_focus().map_err(|e| e.to_string())?;
-        return Ok(());
-    }
+    // Window/webview creation must happen on the main thread on Windows - WebView2's COM
+    // apartment model doesn't tolerate being initialized from the worker thread a command
+    // handler normally runs on. Off the main thread, the native window chrome can still
+    // appear (drawn by DWM) while the WebView2 control inside never initializes, leaving a
+    // blank, DevTools-unreachable window. Ferrying the actual creation through
+    // run_on_main_thread avoids that.
+    let app_for_main_thread = app.clone();
+    app.run_on_main_thread(move || {
+        let app = app_for_main_thread;
+        if let Some(window) = app.get_webview_window("control") {
+            let _ = window.show();
+            let _ = window.set_focus();
+            return;
+        }
 
-    WebviewWindowBuilder::new(&app, "control", WebviewUrl::App("control/control.html".into()))
-        .title("Mic Level HUD - Control Center")
-        .inner_size(960.0, 680.0)
-        .min_inner_size(760.0, 560.0)
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    Ok(())
+        if let Err(e) =
+            WebviewWindowBuilder::new(&app, "control", WebviewUrl::App("control/control.html".into()))
+                .title("Mic Level HUD - Control Center")
+                .inner_size(960.0, 680.0)
+                .min_inner_size(760.0, 560.0)
+                .build()
+        {
+            eprintln!("failed to create control window: {e}");
+        }
+    })
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
