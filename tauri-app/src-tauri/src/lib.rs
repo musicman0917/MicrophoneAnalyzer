@@ -55,9 +55,11 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            // Keep the app resident in the tray when the HUD is closed rather than quitting -
-            // this is a background utility, not a document window.
-            if window.label() == "hud" {
+            // Keep the app resident in the tray when a window is closed rather than quitting
+            // or tearing down its webview - this is a background utility, not a document
+            // window, and hiding (vs. destroying) "control" lets open_control_center just
+            // show()/set_focus() an already-initialized webview instead of re-creating one.
+            if window.label() == "hud" || window.label() == "control" {
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                     api.prevent_close();
                     let _ = window.hide();

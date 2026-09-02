@@ -23,6 +23,16 @@
         "resizable": false,
         "shadow": false,
         "skipTaskbar": false
+      },
+      {
+        "label": "control",
+        "title": "Mic Level HUD - Control Center",
+        "url": "control/control.html",
+        "width": 960,
+        "height": 680,
+        "minWidth": 760,
+        "minHeight": 560,
+        "visible": false
       }
     ],
     "security": {
