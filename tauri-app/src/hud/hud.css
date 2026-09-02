@@ -1,0 +1,139 @@
+* {
+  box-sizing: border-box;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  user-select: none;
+}
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+}
+
+.panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(18, 18, 20, 0.87);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  color: #f2f2f2;
+}
+
+.titlebar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.titlebar-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.titlebar-buttons button {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.titlebar-buttons button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+#closeBtn:hover {
+  background: #ff3b30;
+  color: #fff;
+}
+
+#pinBtn.active {
+  color: #30d158;
+}
+
+.meter {
+  flex: 1;
+  width: 44px;
+  min-height: 0;
+}
+
+.db-readout {
+  font-family: 'Consolas', monospace;
+  font-size: 15px;
+  margin-top: 8px;
+}
+
+.zone-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-top: 2px;
+  min-height: 16px;
+}
+
+.calibration-status {
+  font-size: 10px;
+  color: #ffd60a;
+  margin-top: 4px;
+  text-align: center;
+}
+
+.device-hint {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 6px;
+  text-align: center;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #64d2ff;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* Horizontal orientation, toggled by adding this class to #panel from hud.js */
+.panel.horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.panel.horizontal .titlebar {
+  width: 100%;
+}
+
+.panel.horizontal .meter {
+  width: auto;
+  height: 40px;
+  flex: 1 1 100%;
+}
+
+.panel.horizontal .db-readout,
+.panel.horizontal .zone-label,
+.panel.horizontal .device-hint {
+  flex: 0 0 auto;
+}

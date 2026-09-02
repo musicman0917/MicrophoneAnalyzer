@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Mic Level HUD - Control Center</title>
+  <link rel="stylesheet" href="control.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Mic Level HUD <span class="brand-sub">Control Center</span></div>
+
+    <div class="status-strip">
+      <span id="statusDot" class="status-dot"></span>
+      <span id="statusText">Not connected</span>
+      <span class="sep">|</span>
+      <span id="liveDb" class="live-db">-- dB</span>
+      <span id="liveZone" class="live-zone">NO SIGNAL</span>
+    </div>
+
+    <label class="workflow-picker">
+      Workflow
+      <select id="workflowSelect">
+        <option value="streaming">Live Streaming</option>
+        <option value="recording">Local Recording</option>
+        <option value="discord">Discord / Karaoke</option>
+      </select>
+    </label>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="devices">Devices &amp; Meter</button>
+    <button class="tab-btn" data-tab="noise">Noise Floor Calibration</button>
+    <button class="tab-btn" data-tab="recommendations">Recommendations</button>
+    <button class="tab-btn" data-tab="hardware">Hardware Reference</button>
+  </nav>
+
+  <main class="tab-content">
+    <section id="tab-devices" class="tab-panel active">
+      <h2>Input Device</h2>
+      <p class="hint">
+        The Mackie DLZ Creator XS exposes itself as one Windows/macOS audio device with several
+        channels. Pick the device, then the channel your sE DynaCaster is routed to.
+      </p>
+
+      <div class="field-row">
+        <label for="deviceSelect">Device</label>
+        <select id="deviceSelect"></select>
+        <button id="refreshDevicesBtn">Refresh</button>
+      </div>
+
+      <div class="field-row">
+        <label for="channelSelect">Channel</label>
+        <select id="channelSelect"></select>
+        <button id="connectBtn" class="primary">Connect</button>
+      </div>
+
+      <p id="deviceError" class="error-text" hidden></p>
+
+      <div class="callout">
+        <strong>Why this version exists:</strong> the Electron/Web Audio version of this app
+        could only ever request "as many channels as the browser sandbox is willing to grant,"
+        which on some systems meant a silently downmixed or wrong-channel signal - the meter
+        could read far lower than the true analog level. This version captures through
+        <code>cpal</code> straight onto WASAPI (the same layer NAudio uses), so channel
+        selection is a direct index into the device's real interleaved buffer - no browser
+        downmix in the path at all.
+      </div>
+    </section>
+
+    <section id="tab-noise" class="tab-panel">
+      <h2>Room Noise Floor &amp; Silence Calibration</h2>
+      <p class="hint">
+        Stay silent for a couple of seconds while this samples your room's ambient noise (fans,
+        HVAC, PC hum, room echo). The result suggests a noise-gate threshold 6-10 dB above that
+        floor - enough headroom to avoid gate chatter without letting noise through.
+      </p>
+
+      <button id="calibrateBtn" class="primary">Run Noise Floor Check (Ctrl+Alt+N)</button>
+      <div id="calibrationProgress" class="progress-bar" hidden>
+        <div id="calibrationProgressFill" class="progress-bar-fill"></div>
+      </div>
+
+      <div id="calibrationResult" class="calibration-result" hidden>
+        <div class="result-grid">
+          <div>
+            <span class="result-label">Noise Floor</span>
+            <span id="resultNoiseFloor" class="result-value">--</span>
+          </div>
+          <div>
+            <span class="result-label">Suggested Gate Threshold</span>
+            <span id="resultGateThreshold" class="result-value">--</span>
+          </div>
+          <div>
+            <span class="result-label">Suggested Gate Range</span>
+            <span id="resultGateRange" class="result-value">--</span>
+          </div>
+        </div>
+        <p id="resultAlert" class="result-alert" hidden></p>
+      </div>
+    </section>
+
+    <section id="tab-recommendations" class="tab-panel">
+      <h2>OBS Filter &amp; Chain Recommendations</h2>
+      <p class="hint">
+        Rules react to your live level, the calibrated noise floor (if you've run one), and the
+        workflow selected above. This is a starting point, not gospel - trust your ears.
+      </p>
+      <div id="recommendationsList" class="recommendations-list"></div>
+    </section>
+
+    <section id="tab-hardware" class="tab-panel">
+      <h2>Interactive Hardware Reference</h2>
+      <p class="hint">
+        Glowing points show what to touch based on your current recommendations. Every point
+        is clickable - not just the glowing ones - for the exact tap sequence and, where the
+        control lives on the touchscreen, an actual screenshot pulled from the official DLZ
+        Creator XS Owner's Manual.
+        <em>Coordinates in <code>shared/hotspots.js</code> were measured against this exact
+        photo - swap in a different photo (different unit, angle, or crop) and you'll need to
+        re-measure them.</em>
+      </p>
+
+      <div class="hardware-layout">
+        <div class="hardware-diagram-wrap">
+          <div id="hardwareDiagram" class="hardware-diagram">
+            <img src="../assets/dlz-front-panel.jpg" alt="Mackie DLZ Creator XS front panel" class="diagram-photo" />
+            <div id="hotspotLayer" class="hotspot-layer"></div>
+          </div>
+        </div>
+
+        <div id="hotspotDetail" class="hotspot-detail">
+          <p class="hotspot-detail-placeholder">Click any point on the diagram for details.</p>
+        </div>
+      </div>
+
+      <div id="hotspotTooltip" class="hotspot-tooltip" hidden></div>
+    </section>
+  </main>
+
+  <script type="module" src="control.js"></script>
+</body>
+</html>

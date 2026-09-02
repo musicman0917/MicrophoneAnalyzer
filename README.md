@@ -1,6 +1,6 @@
 # MicrophoneAnalyzer
 
-Two implementations of the same idea: a real-time mic-level analyzer and "sweet spot"
+Three implementations of the same idea: a real-time mic-level analyzer and "sweet spot"
 visual guide for a multi-environment workflow (local recording, live streaming, Discord
 voice/karaoke), built around a **Mackie DLZ Creator XS** feeding an **sE DynaCaster**.
 
@@ -9,9 +9,15 @@ voice/karaoke), built around a **Mackie DLZ Creator XS** feeding an **sE DynaCas
 - **`electron-app/`** - an Electron/Web Audio API app with the same LED HUD plus three
   extra modules: room noise floor calibration, an OBS filter/workflow recommendation
   engine, and an interactive hardware reference diagram. Cross-platform-capable, but the
-  Web Audio API can't do WASAPI-style per-channel addressing (see that app's README for
-  what that means in practice). See `electron-app/README.md` for its own architecture,
-  setup, and details.
+  Web Audio API can't do WASAPI-style per-channel addressing - on real hardware this
+  surfaced as the meter reading a downmixed/wrong-channel signal, confirmed against OBS's
+  own mixer meter on the same input. See `electron-app/README.md` for what that means in
+  practice.
+- **`tauri-app/`** - the fix for that: same HUD/Control Center UI (its frontend is almost
+  entirely reused from `electron-app/`), but captures through `cpal` straight onto WASAPI in
+  a small Rust backend instead of going through a browser sandbox. Channel selection is a
+  direct index into the device's real interleaved buffer, so the downmix bug above can't
+  happen here. See `tauri-app/README.md` for its architecture and what changed.
 
 The rest of this file covers the WPF/NAudio version.
 

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Mic Level HUD</title>
+  <link rel="stylesheet" href="hud.css" />
+</head>
+<body>
+  <div id="panel" class="panel">
+    <div id="dragHandle" class="titlebar" data-tauri-drag-region>
+      <span class="title">MIC LEVEL</span>
+      <div class="titlebar-buttons">
+        <button id="pinBtn" title="Toggle Always on Top">&#128204;</button>
+        <button id="calibrateBtn" title="Run Noise Floor Check (Ctrl+Alt+N)">&#127925;</button>
+        <button id="settingsBtn" title="Open Control Center">&#9881;</button>
+        <button id="closeBtn" title="Quit">&times;</button>
+      </div>
+    </div>
+
+    <canvas id="meterCanvas" class="meter"></canvas>
+
+    <div id="dbReadout" class="db-readout">-&infin; dB</div>
+    <div id="zoneLabel" class="zone-label">NO SIGNAL</div>
+    <div id="calibrationStatus" class="calibration-status" hidden></div>
+
+    <div id="deviceHint" class="device-hint">
+      No device selected -
+      <button id="openDevicesBtn" class="link-button">choose one</button>
+    </div>
+  </div>
+
+  <script type="module" src="hud.js"></script>
+</body>
+</html>
