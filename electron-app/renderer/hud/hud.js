@@ -7,18 +7,31 @@ const SEGMENT_COUNT = 28;
 const MAX_DB = 0;
 const GAP_RATIO = 0.22;
 
-// The bar's own visual floor - deliberately NOT the same as MIN_DB (-60, used for real dB
-// math/silence detection elsewhere). At -60, the "Too Low" zone (< -24dB) alone spans 36 of
-// 60 dB - 60% of the whole bar - and since segments light cumulatively from the bottom, any
-// ordinary speaking level lights up that entire oversized red base before ever reaching the
-// comparatively tiny green band. The bar ends up looking like a wall of red almost all the
-// time, regardless of whether anything is actually wrong. -30 gives "Too Low" the same 6dB
-// visual width as the "Low" band above it (symmetric, and verified against actual segment
-// output - at a comfortable -14dB RMS this drops the lit bar from 81% red to 40%, with the
-// green sweet-spot band actually visible instead of a sliver). This only changes what the
-// BAR shows - the classification thresholds themselves (TOO_LOW_CEILING etc. in
-// levelClassifier.js) are unchanged, so "how loud is too loud" advice doesn't shift at all.
-const METER_FLOOR_DB = -30;
+// The bar uses a two-range visual scale, deliberately NOT the same linear -60..0 scale used
+// for real dB math/silence detection elsewhere (MIN_DB). A single linear floor can't satisfy
+// two things at once:
+//   - Too generous a floor (-60, the original): "Too Low" (< -24dB) alone spans 36 of 60 dB -
+//     60% of the whole bar - and since segments light cumulatively from the bottom, any
+//     ordinary speaking level lights that entire oversized red base before ever reaching
+//     green. The bar looks like a wall of red almost all the time, independent of whether
+//     anything is actually wrong.
+//   - Too tight a floor (-30, tried and reverted after user testing): fixes the above at a
+//     healthy level, but any real signal quieter than -30dB shows ZERO lit segments - the
+//     bar goes completely dead/empty long before someone would call it "too quiet," which
+//     reads as broken rather than informative.
+// The fix is a small fixed slice of segments (COMPRESSED_SEGMENTS) that compresses the deep
+// end (DEEP_FLOOR_DB..ACTIONABLE_FLOOR_DB) so quiet signals always show *some* movement,
+// while the rest of the bar gives full resolution to the actionable range
+// (ACTIONABLE_FLOOR_DB..0) where the real decisions happen. Verified against the app's real
+// classify()/colorFor(): at -14dB RMS (comfortably sweet-spot) the lit bar is 53% red here,
+// down from 81% on the original -60 floor, while a quiet -35dB signal still lights 3
+// segments instead of 0. This only changes what the BAR shows - the classification
+// thresholds themselves (TOO_LOW_CEILING etc. in levelClassifier.js) are unchanged, so "how
+// loud is too loud" advice doesn't shift at all.
+const DEEP_FLOOR_DB = MIN_DB; // -60, true silence
+const ACTIONABLE_FLOOR_DB = -30; // where full-resolution segments begin
+const COMPRESSED_SEGMENTS = 4;
+const ACTIONABLE_SEGMENTS = SEGMENT_COUNT - COMPRESSED_SEGMENTS;
 
 const panel = document.getElementById('panel');
 const canvas = document.getElementById('meterCanvas');
@@ -250,7 +263,7 @@ function drawMeter(rmsDb, peakHoldDb) {
   const peakSegment = Math.min(SEGMENT_COUNT - 1, Math.max(0, dbToSegmentIndex(peakHoldDb) - 1));
 
   for (let i = 0; i < SEGMENT_COUNT; i++) {
-    const segDbLow = METER_FLOOR_DB + ((MAX_DB - METER_FLOOR_DB) * i) / SEGMENT_COUNT;
+    const segDbLow = segmentFloorDb(i);
     const zone = classify(segDbLow);
     const baseColor = colorFor(zone);
     const lit = i < litCount;
@@ -283,6 +296,19 @@ function drawMeter(rmsDb, peakHoldDb) {
 }
 
 function dbToSegmentIndex(db) {
-  const normalized = (db - METER_FLOOR_DB) / (MAX_DB - METER_FLOOR_DB);
-  return Math.min(SEGMENT_COUNT, Math.max(0, Math.round(normalized * SEGMENT_COUNT)));
+  if (db <= ACTIONABLE_FLOOR_DB) {
+    const normalized = (db - DEEP_FLOOR_DB) / (ACTIONABLE_FLOOR_DB - DEEP_FLOOR_DB);
+    return Math.min(COMPRESSED_SEGMENTS, Math.max(0, Math.round(normalized * COMPRESSED_SEGMENTS)));
+  }
+  const normalized = (db - ACTIONABLE_FLOOR_DB) / (MAX_DB - ACTIONABLE_FLOOR_DB);
+  return COMPRESSED_SEGMENTS + Math.min(ACTIONABLE_SEGMENTS, Math.max(0, Math.round(normalized * ACTIONABLE_SEGMENTS)));
+}
+
+/** Inverse of dbToSegmentIndex: the dB value the bottom edge of segment `i` represents. */
+function segmentFloorDb(i) {
+  if (i < COMPRESSED_SEGMENTS) {
+    return DEEP_FLOOR_DB + ((ACTIONABLE_FLOOR_DB - DEEP_FLOOR_DB) * i) / COMPRESSED_SEGMENTS;
+  }
+  const j = i - COMPRESSED_SEGMENTS;
+  return ACTIONABLE_FLOOR_DB + ((MAX_DB - ACTIONABLE_FLOOR_DB) * j) / ACTIONABLE_SEGMENTS;
 }
