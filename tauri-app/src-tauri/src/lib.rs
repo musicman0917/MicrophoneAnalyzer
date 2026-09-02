@@ -49,6 +49,19 @@ pub fn run() {
                 eprintln!("[hotkey] failed to register Ctrl+Alt+N: {err}");
             }
 
+            // "control" is declared visible in tauri.conf.json (not visible: false) so WRY
+            // creates its WebView2 controller eagerly, right here in .setup() - which Tauri
+            // guarantees runs on the main thread, same as "hud"'s own creation. A window
+            // declared visible: false was observed (on real Windows/WebView2 hardware) to
+            // defer that controller creation to its first show() call instead, which then
+            // happened from inside a command handler's worker thread and silently produced
+            // a window with native chrome but no working webview inside - confirmed via
+            // WebView2's own remote-debugging endpoint (--remote-debugging-port) showing no
+            // page target for control.html at all, i.e. no controller was ever created.
+            if let Some(control_window) = app.get_webview_window("control") {
+                let _ = control_window.hide();
+            }
+
             setup_tray(app)?;
             spawn_level_emitter(handle);
 
