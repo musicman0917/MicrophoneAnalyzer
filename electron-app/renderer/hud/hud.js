@@ -1,5 +1,5 @@
 import { AudioEngine } from '../../shared/audioEngine.js';
-import { classify, colorFor, labelFor, MIN_DB } from '../../shared/levelClassifier.js';
+import { classify, classifyWithPeak, colorFor, labelFor, MIN_DB } from '../../shared/levelClassifier.js';
 import { NoiseFloorCalibrator } from '../../shared/noiseFloor.js';
 
 const STORAGE_KEY = 'mic-hud-settings-v1';
@@ -13,6 +13,7 @@ const ctx = canvas.getContext('2d');
 const dbReadoutEl = document.getElementById('dbReadout');
 const zoneLabelEl = document.getElementById('zoneLabel');
 const calibrationStatusEl = document.getElementById('calibrationStatus');
+const downmixWarningEl = document.getElementById('downmixWarning');
 const deviceHintEl = document.getElementById('deviceHint');
 
 const engine = new AudioEngine();
@@ -129,9 +130,27 @@ async function connect(deviceId, channelIndex) {
     const { channelCount } = await engine.start(deviceId, channelIndex, 8);
     setDeviceHintVisible(false);
     window.hudApi.sendStatus({ connected: true, deviceId, channelIndex, channelCount });
+    checkDownmixWarning(deviceId, channelCount);
   } catch (err) {
     window.hudApi.sendStatus({ connected: false, error: err.message });
     throw err;
+  }
+}
+
+/**
+ * If Chromium granted fewer channels than the device itself advertises, the analyzed stream
+ * is very likely a downmix - which can make this meter read lower than the true analog
+ * signal, tempting heavy over-gain that clips for real on the hardware while this app still
+ * looks fine. See the matching check/comment in control.js for the full explanation.
+ */
+async function checkDownmixWarning(deviceId, grantedChannels) {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const device = devices.find((d) => d.deviceId === deviceId && d.kind === 'audioinput');
+    const maxChannels = device?.getCapabilities?.().channelCount?.max ?? 0;
+    downmixWarningEl.hidden = !(maxChannels && grantedChannels < maxChannels);
+  } catch {
+    downmixWarningEl.hidden = true;
   }
 }
 
@@ -180,11 +199,11 @@ function resizeCanvasForDpr() {
 function renderLoop() {
   const { rmsDb, peakHoldDb } = engine.isRunning ? engine.getLevels() : { rmsDb: MIN_DB, peakHoldDb: MIN_DB };
   drawMeter(rmsDb, peakHoldDb);
-  updateReadout(rmsDb);
+  updateReadout(rmsDb, peakHoldDb);
   requestAnimationFrame(renderLoop);
 }
 
-function updateReadout(rmsDb) {
+function updateReadout(rmsDb, peakHoldDb) {
   if (!engine.isRunning) {
     dbReadoutEl.textContent = '-- dB';
     zoneLabelEl.textContent = 'NO SIGNAL';
@@ -193,7 +212,9 @@ function updateReadout(rmsDb) {
   }
 
   dbReadoutEl.textContent = rmsDb <= MIN_DB + 0.5 ? '-∞ dB' : `${rmsDb.toFixed(1)} dB`;
-  const zone = classify(rmsDb);
+  // Peak (held briefly so a real clip is actually visible, not a single vanishing frame)
+  // overrides RMS here - RMS alone can read "Sweet Spot" while a peak is genuinely clipping.
+  const zone = classifyWithPeak(rmsDb, peakHoldDb);
   zoneLabelEl.textContent = labelFor(zone);
   zoneLabelEl.style.color = colorFor(zone);
 }

@@ -1,4 +1,4 @@
-import { classify, colorFor, labelFor, MIN_DB } from '../../shared/levelClassifier.js';
+import { classifyWithPeak, colorFor, labelFor, MIN_DB } from '../../shared/levelClassifier.js';
 import { buildRecommendations, WORKFLOWS } from '../../shared/recommendations.js';
 import { DEFAULT_CALIBRATION_DURATION_MS } from '../../shared/noiseFloor.js';
 import { HOTSPOTS } from '../../shared/hotspots.js';
@@ -18,6 +18,7 @@ const dom = {
   refreshDevicesBtn: document.getElementById('refreshDevicesBtn'),
   connectBtn: document.getElementById('connectBtn'),
   deviceError: document.getElementById('deviceError'),
+  downmixWarning: document.getElementById('downmixWarning'),
 
   calibrateBtn: document.getElementById('calibrateBtn'),
   calibrationProgress: document.getElementById('calibrationProgress'),
@@ -41,6 +42,7 @@ const state = {
   latestNoiseFloor: loadNoiseFloor(),
   workflow: loadWorkflow(),
   connected: false,
+  lastStatus: null,
 };
 
 const hotspotElements = new Map();
@@ -117,6 +119,9 @@ async function loadDevices() {
       dom.deviceSelect.appendChild(option);
     }
     populateChannelOptions();
+    // The initial status may have arrived before the device list did, in which case the
+    // downmix check had nothing to compare against - re-run it now that it does.
+    if (state.lastStatus) applyStatus(state.lastStatus);
   } catch (err) {
     dom.deviceError.hidden = false;
     dom.deviceError.textContent = `Could not list devices: ${err.message}`;
@@ -177,6 +182,7 @@ function wireLiveUpdates() {
 }
 
 function applyStatus(status) {
+  state.lastStatus = status;
   state.connected = !!status?.connected;
   dom.statusDot.classList.toggle('connected', state.connected);
 
@@ -184,11 +190,41 @@ function applyStatus(status) {
     const device = state.devices.find((d) => d.deviceId === status.deviceId);
     const label = device?.label ?? 'input device';
     dom.statusText.textContent = `Connected - ${label}, channel ${((status.channelIndex ?? 0) + 1)} of ${status.channelCount ?? '?'}`;
+    updateDownmixWarning(device, status.channelCount);
   } else if (status?.error) {
     dom.statusText.textContent = `Disconnected - ${status.error}`;
+    dom.downmixWarning.hidden = true;
   } else {
     dom.statusText.textContent = 'Not connected';
+    dom.downmixWarning.hidden = true;
   }
+}
+
+/**
+ * If Chromium granted fewer channels than the device actually advertises, the stream we're
+ * analyzing is very likely a downmix (summed/averaged) rather than a true single-channel
+ * passthrough - which can make the meter read noticeably LOWER than the real analog signal.
+ * That's the dangerous failure mode: it looks like "everything's fine, sweet spot" here while
+ * the DLZ's own preamp could already be driven into real clipping, because the user (correctly,
+ * given what this app is showing) keeps raising analog gain to chase a meter that can't reach
+ * green at the true level.
+ */
+function updateDownmixWarning(device, grantedChannels) {
+  const maxChannels = device?.maxChannels ?? 0;
+  if (!grantedChannels || !maxChannels || grantedChannels >= maxChannels) {
+    dom.downmixWarning.hidden = true;
+    return;
+  }
+
+  dom.downmixWarning.hidden = false;
+  dom.downmixWarning.textContent =
+    `Only ${grantedChannels} of ${maxChannels} channels were granted for this device - the ` +
+    'signal you\'re seeing here is very likely a downmix, not a true single-channel feed, and ' +
+    'may read LOWER than the real analog level. If you find yourself raising gain far more than ' +
+    'expected to reach the green zone, stop and check the DLZ Creator XS\'s own touchscreen ' +
+    'input meter instead - it\'s unaffected by this and is the ground truth for whether you\'re ' +
+    'actually clipping. Don\'t chase this app\'s meter into the green at the cost of visibly ' +
+    'peaking on the hardware\'s own meter.';
 }
 
 function updateLiveReadout(levels) {
@@ -199,7 +235,8 @@ function updateLiveReadout(levels) {
     return;
   }
   dom.liveDb.textContent = levels.rmsDb <= MIN_DB + 0.5 ? '-∞ dB' : `${levels.rmsDb.toFixed(1)} dB`;
-  const zone = classify(levels.rmsDb);
+  // Peak overrides RMS here for the same reason as the HUD - see classifyWithPeak's doc comment.
+  const zone = classifyWithPeak(levels.rmsDb, levels.peakHoldDb);
   dom.liveZone.textContent = labelFor(zone);
   dom.liveZone.style.color = colorFor(zone);
 }
@@ -299,7 +336,9 @@ function renderRecommendations() {
 
   const recs = buildRecommendations({
     rmsDb: state.latestLevels.rmsDb,
-    peakDb: state.latestLevels.peakDb,
+    // peakHoldDb (decaying, not instantaneous) so a transient clip between our 1s refreshes
+    // isn't missed - see the param doc on buildRecommendations for why this matters.
+    peakDb: state.latestLevels.peakHoldDb,
     noiseFloor: state.latestNoiseFloor,
     workflow: state.workflow,
   });

@@ -3,7 +3,7 @@
 // guidance. Deliberately simple/ordered rules rather than a black box, so the reasoning
 // is easy to audit and retune.
 
-import { classify, ZONES } from './levelClassifier.js';
+import { classifyWithPeak, ZONES } from './levelClassifier.js';
 import { HOTSPOT_IDS } from './hotspots.js';
 
 export const WORKFLOWS = Object.freeze({
@@ -16,11 +16,17 @@ const DYNAMIC_RANGE_WARNING_DB = 20;
 
 /**
  * @param {{ rmsDb: number, peakDb: number, noiseFloor?: object|null, workflow?: string }} input
+ *   `peakDb` should be the decaying peak-HOLD value, not the instantaneous per-frame peak -
+ *   this only gets recomputed on a ~1s interval by the caller, and an instantaneous peak can
+ *   easily fall between samples and hide a real transient clip.
  * @returns {Array<{id:string, severity:'info'|'warning'|'critical', title:string, detail:string, obs:string[], hotspots:string[]}>}
  */
 export function buildRecommendations({ rmsDb, peakDb, noiseFloor = null, workflow = WORKFLOWS.STREAMING }) {
   const recs = [];
-  const zone = classify(rmsDb);
+  // Peak overrides RMS: an average level that looks like "Sweet Spot" can coexist with a
+  // peak that's genuinely clipping (a plosive barely moves a time-averaged RMS reading), and
+  // clipping is what's actually audible - so it has to win regardless of what RMS says.
+  const zone = classifyWithPeak(rmsDb, peakDb);
 
   if (zone === ZONES.TOO_LOW || zone === ZONES.LOW) {
     recs.push({

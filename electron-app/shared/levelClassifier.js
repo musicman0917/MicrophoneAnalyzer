@@ -30,6 +30,22 @@ export function classify(dbfs) {
   return ZONES.CLIPPING;
 }
 
+/**
+ * The zone that should actually drive what a user SEES (label/color), combining RMS with
+ * peak. RMS alone is the wrong thing to gate clip warnings on: a smoothed average can sit
+ * comfortably in "Sweet Spot" while a plosive or transient is genuinely clipping at 0 dBFS+,
+ * because a single loud spike barely moves a time-averaged RMS reading. A meter whose entire
+ * purpose is "don't clip" has to let peak-over-threshold override the average, the same way
+ * real broadcast meters do - so if peak alone has crossed into Hot/Clipping territory, that
+ * wins over whatever RMS says. It only ever escalates the displayed zone, never manufactures
+ * a false "too quiet" from a loud peak.
+ */
+export function classifyWithPeak(rmsDb, peakDb) {
+  if (peakDb >= HOT_FLOOR) return ZONES.CLIPPING;
+  if (peakDb > SWEET_SPOT_CEILING) return ZONES.APPROACHING;
+  return classify(rmsDb);
+}
+
 const COLORS = {
   [ZONES.TOO_LOW]: '#ff3b30',
   [ZONES.LOW]: '#ff9f0a',

@@ -88,6 +88,30 @@ Identical to the WPF app - see `shared/levelClassifier.js`:
 | -10 to -6 dB      | Hot (approaching clip)   | Amber        |
 | > -6 dB           | Clipping risk            | Red          |
 
+The table above is keyed on RMS, but the color/label you actually *see* (`classifyWithPeak`)
+is not RMS-only - peak overrides it. RMS is a time-averaged reading, so a single plosive or
+transient can clip at 0 dBFS+ while barely nudging a smoothed RMS number; a meter whose whole
+job is "don't clip" can't let that read as "Sweet Spot." If the (briefly-held) peak alone has
+already crossed into Hot/Clipping territory, that wins over whatever RMS says - it only ever
+escalates the shown zone, never manufactures a false "too quiet" from a loud peak. This also
+gates the clipping-risk recommendation in `shared/recommendations.js`, which previously only
+looked at RMS and could stay silent through a real clip.
+
+### A note on Chromium channel downmixing
+
+If Chromium only grants fewer channels than the selected device actually advertises (see
+[Web Audio vs. WASAPI](#web-audio-vs-wasapi---a-real-limitation) below), the stream being
+analyzed is very likely a downmix rather than a true single-channel feed - and a downmix can
+read noticeably *lower* than the real analog signal. That's a dangerous failure mode: it
+looks like "everything's fine" here while the hardware preamp could already be driven into
+real clipping, because raising gain to chase a meter that can't reach green at the true level
+is exactly the wrong move. Both the HUD and the Control Center's Devices tab now detect this
+(comparing granted channels against `MediaDeviceInfo.getCapabilities().channelCount.max`) and
+show an explicit warning when it's happening - if you ever find yourself raising gain far more
+than expected to reach the green zone, check the DLZ Creator XS's own touchscreen input meter
+instead, which is unaffected by any of this and is the actual ground truth for whether you're
+clipping.
+
 ### Noise floor calibration
 
 `NoiseFloorCalibrator` samples RMS over ~2.5s, using the 75th percentile (rather than the

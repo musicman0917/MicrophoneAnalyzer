@@ -189,6 +189,16 @@ h2 {
   font-size: 13px;
 }
 
+.warning-text {
+  padding: 12px 14px;
+  background: rgba(255, 69, 58, 0.1);
+  border: 1px solid rgba(255, 69, 58, 0.35);
+  border-radius: 8px;
+  color: #ff8f88;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .callout {
   margin-top: 20px;
   padding: 12px 14px;
