@@ -37,6 +37,7 @@ pub fn run() {
             commands::get_status,
             commands::run_calibration,
             commands::open_control_center,
+            commands::control_ready,
             commands::set_hud_always_on_top,
             commands::resize_hud,
             commands::quit_app,
@@ -58,9 +59,14 @@ pub fn run() {
             // a window with native chrome but no working webview inside - confirmed via
             // WebView2's own remote-debugging endpoint (--remote-debugging-port) showing no
             // page target for control.html at all, i.e. no controller was ever created.
-            if let Some(control_window) = app.get_webview_window("control") {
-                let _ = control_window.hide();
-            }
+            //
+            // It's deliberately NOT hidden here: WebView2 controller creation and its initial
+            // navigation are asynchronous, and .setup() runs before Tauri's event loop starts
+            // pumping the messages that async completion needs - hiding synchronously here
+            // raced that pending navigation and left the window stuck on about:blank
+            // (confirmed the same way, via the remote-debugging endpoint). Instead
+            // commands::control_ready hides it once control.js confirms the page actually
+            // loaded and started running - see that file's first line.
 
             setup_tray(app)?;
             spawn_level_emitter(handle);

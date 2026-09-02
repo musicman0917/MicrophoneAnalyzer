@@ -11,6 +11,13 @@ import { HOTSPOTS } from '../shared/hotspots.js';
 // come straight from WASAPI's own supported-config negotiation, not a browser sandbox's
 // best-effort channelCount request.
 
+// Tells Rust this window has actually navigated and started running JS, so it's safe to
+// hide it now (it starts visible - see tauri.conf.json/lib.rs for why). Hiding it from Rust
+// immediately on window creation raced the async WebView2 controller/navigation setup and
+// left the window stuck on about:blank instead of ever loading this page; waiting for this
+// signal makes that handoff deterministic instead of timing-dependent.
+invoke('control_ready').catch(() => {});
+
 const STORAGE_KEY = 'mic-hud-control-v1';
 const CALIBRATION_DURATION_MS = 2500; // matches CALIBRATION_DURATION in src-tauri/src/audio.rs
 const RECOMMENDATION_REFRESH_MS = 1000;
